@@ -1,0 +1,182 @@
+/* MedKit – frontend JS (optimized + bug-fixed) */
+
+/**
+ * Utility: show a non-blocking status message instead of alert().
+ * Falls back to alert() if no #status-msg element exists on the page.
+ */
+function showMsg(msg, isError = false) {
+    const el = document.getElementById("status-msg");
+    if (el) {
+        el.textContent = msg;
+        el.style.color = isError ? "#dc3545" : "#28a745";
+        el.style.display = "block";
+    } else {
+        alert(msg);
+    }
+}
+
+/** Disable/enable a button with loading text while a request is in flight. */
+function setLoading(btn, loading) {
+    if (!btn) return;
+    btn.disabled = loading;
+    btn.dataset.originalText = btn.dataset.originalText || btn.textContent;
+    btn.textContent = loading ? "Loading…" : btn.dataset.originalText;
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+async function CredentialCheck() {
+    const user = document.getElementById("username").value.trim();
+    const pass = document.getElementById("password").value;
+    const btn  = document.querySelector("button[onclick='CredentialCheck()']");
+
+    if (!user || !pass) { showMsg("Please fill in all fields.", true); return; }
+
+    setLoading(btn, true);
+    try {
+        const resp = await fetch("/login", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ username: user, password: pass })
+        });
+        const data = await resp.json();
+
+        if (resp.ok) {
+            window.location.href = data.redirect;
+        } else {
+            showMsg("Error: " + (data.error || data.message || "Unknown error"), true);
+        }
+    } catch (err) {
+        console.error("Connection error:", err);
+        showMsg("Connection error — is the server running?", true);
+    } finally {
+        setLoading(btn, false);
+    }
+}
+
+// ── Register ──────────────────────────────────────────────────────────────────
+async function CredentialSave() {
+    const nuser = document.getElementById("nusername").value.trim();
+    const user  = document.getElementById("user").value.trim();
+    const npass = document.getElementById("npassword").value;
+    const admin = document.getElementById("admin").value;
+    // BUG FIX: original read id="passkey" but input had id="passk"
+    const passk = document.getElementById("passk").value.trim();
+    const btn   = document.querySelector("button[onclick='CredentialSave()']");
+
+    if (!nuser || !user || !npass || !passk) {
+        showMsg("Please fill in all required fields.", true); return;
+    }
+
+    setLoading(btn, true);
+    try {
+        // 1. Register account
+        const resp = await fetch("/register", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ username: nuser, password: npass,
+                                     admin: admin, user: user, passk: passk })
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+            showMsg("Registration error: " + (data.error || data.message || "Unknown error"), true);
+            return;
+        }
+
+        // 2. Queue RFID assignment BEFORE redirecting
+        // BUG FIX: original redirected first, so RFID was never queued
+        try {
+            const rfid = await fetch("/pending-rfid", {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ username: nuser })
+            });
+            const rfidData = await rfid.json();
+            if (!rfid.ok) {
+                showMsg("Account created but RFID queuing failed: " + (rfidData.message || ""), true);
+            } else {
+                showMsg("Account created! Ask the patient to scan their RFID card on the reader.");
+            }
+        } catch {
+            showMsg("Account created but could not reach RFID service.", true);
+        }
+
+        // 3. Redirect only after everything is done
+        setTimeout(() => { window.location.href = data.redirect; }, 1500);
+
+    } catch (err) {
+        console.error("Connection error:", err);
+        showMsg("Connection error — is the server running?", true);
+    } finally {
+        setLoading(btn, false);
+    }
+}
+
+// ── Drawer / treatment ────────────────────────────────────────────────────────
+async function Sendinfo(value) {
+    const timeVal = document.getElementById("time"   + value).value.trim();
+    const user    = document.getElementById("user"   + value).value.trim();
+    const object  = document.getElementById("Object" + value).value.trim();
+    const btn     = document.querySelector(`button[onclick="Sendinfo(${value})"]`);
+
+    if (!user || !timeVal || !object) {
+        showMsg("Please fill in all fields for drawer " + value + ".", true); return;
+    }
+
+    setLoading(btn, true);
+    try {
+        const resp = await fetch("/Application", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ user: user, time: timeVal,
+                                     Object: object, Tiroirs: value })
+        });
+        const data = await resp.json();
+
+        if (resp.ok) {
+            showMsg("Drawer " + value + " saved successfully!");
+        } else {
+            showMsg("Error: " + (data.message || data.error || "Unknown error"), true);
+        }
+    } catch (err) {
+        console.error("Connection error:", err);
+        showMsg("Connection error — is the server running?", true);
+    } finally {
+        setLoading(btn, false);
+    }
+}
+
+// ── Reset password ────────────────────────────────────────────────────────────
+async function Resetpass() {
+    const user    = document.getElementById("username").value.trim();
+    const passk   = document.getElementById("passkey").value.trim();
+    const newPass = document.getElementById("password").value;
+    const btn     = document.querySelector("button[onclick='Resetpass()']");
+
+    if (!user || !passk || !newPass) {
+        showMsg("All fields are required.", true); return;
+    }
+
+    setLoading(btn, true);
+    try {
+        const resp = await fetch("/reset-password", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ username: user, passk: passk, password: newPass })
+        });
+        const data = await resp.json();
+
+        // BUG FIX: original had no success/error feedback at all
+        if (resp.ok) {
+            showMsg("Password updated! Redirecting…");
+            setTimeout(() => { window.location.href = "/"; }, 1500);
+        } else {
+            showMsg("Error: " + (data.message || data.error || "Unknown error"), true);
+        }
+    } catch (err) {
+        console.error("Connection error:", err);
+        showMsg("Connection error — is the server running?", true);
+    } finally {
+        setLoading(btn, false);
+    }
+}

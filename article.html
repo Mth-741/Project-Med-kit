@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon traitement – MedKit</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body { background: #f0f4f8; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 40px 20px; }
+        .container { max-width: 480px; margin: 0 auto; }
+        .card {
+            background: white; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 30px; margin-bottom: 20px;
+            border-top: 4px solid #007bff;
+        }
+        .card h2 { color: #2c3e50; margin: 0 0 6px; }
+        .card .subtitle { color: #7f8c8d; font-size: 0.85rem; margin-bottom: 20px; }
+        .info-row { display: flex; justify-content: space-between; align-items: center;
+                    padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: #7f8c8d; font-size: 0.9rem; }
+        .info-value { font-weight: 600; color: #2c3e50; }
+        .badge {
+            display: inline-block; padding: 4px 12px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 600;
+        }
+        .badge-blue  { background: #e3f0ff; color: #0056b3; }
+        .badge-green { background: #e6f9f0; color: #1a7f4b; }
+        .badge-gray  { background: #f0f0f0; color: #666; }
+        .alert { background: #fff3cd; border-left: 4px solid #ffc107;
+                 padding: 12px 16px; border-radius: 6px; color: #856404;
+                 font-size: 0.9rem; margin-top: 10px; }
+        .btn-logout {
+            display: block; width: 100%; padding: 12px; text-align: center;
+            background: #dc3545; color: white; border: none; border-radius: 6px;
+            font-size: 1rem; font-weight: bold; cursor: pointer; text-decoration: none;
+            margin-top: 10px;
+        }
+        .btn-logout:hover { background: #b02a37; }
+        .icon { font-size: 2rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="card">
+        <div class="icon">💊</div>
+        <h2>Mon traitement</h2>
+        <p class="subtitle">Votre prescription du jour</p>
+
+        <div id="traitement-content">
+            <p style="color:#7f8c8d;text-align:center">Chargement...</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Informations</h2>
+        <p class="subtitle">Portail patient MedKit</p>
+        <div class="info-row">
+            <span class="info-label">Statut</span>
+            <span class="badge badge-green">Connecté</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Accès</span>
+            <span class="badge badge-blue">Patient</span>
+        </div>
+    </div>
+
+    <a href="/logout" class="btn-logout">Se déconnecter</a>
+</div>
+
+<script>
+async function loadTraitement() {
+    try {
+        const resp = await fetch('/my-traitement');
+        if (!resp.ok) throw new Error(resp.status);
+        const data = await resp.json();
+        const t = data.traitement;
+        const el = document.getElementById('traitement-content');
+
+        if (!t || Object.keys(t).length === 0) {
+            el.innerHTML = '<div class="alert">Aucun traitement assigné pour le moment.</div>';
+            return;
+        }
+
+        el.innerHTML = `
+            <div class="info-row">
+                <span class="info-label">Médicament</span>
+                <span class="info-value">${t.object || '—'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Heure de prise</span>
+                <span class="info-value">${t.time || '—'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Tiroir n°</span>
+                <span class="info-value">${t.tiroirs || '—'}</span>
+            </div>
+        `;
+    } catch (e) {
+        document.getElementById('traitement-content').innerHTML =
+            '<div class="alert">Impossible de charger le traitement.</div>';
+    }
+}
+loadTraitement();
+</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | Med-kit services</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body { display: block; padding: 40px 20px; }
+        .register-container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto;
+            border-top: 5px solid #007bff;
+        }
+        .register-container input { margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="medical-icon">✚</div>
+        <h1>Reset your password</h1>
+        <p>Fill the username and password field</p>
+
+        <div class="input-group">
+            <input type="text"     id="username" placeholder="Username" required>
+        </div>
+        <div class="input-group">
+            <input type="text"     id="passkey"      placeholder="Passkey" required>
+        </div>
+        <div class="input-group">
+            <input type="password" id="password" placeholder="Password" required>
+        </div>
+        <button class="btn-primary" onclick="Resetpass()">CReset</button>
+    </div>
+
+    <!-- defer ensures DOM is ready before script runs -->
+    <script src="/static/script.js" defer></script>
+</body>
+</html>

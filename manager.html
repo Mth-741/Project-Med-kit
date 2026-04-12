@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Espace Médecin - Casier</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 50px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #218838; }
+        h2 { color: #333; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1> Configuration Traitement</h1>
+    <div class="card">
+        <h3>Tiroir 1</h3>
+        <label>Patient (Username):</label>
+        <input type="text" id="user1" placeholder="ex: jean-dupont">
+        
+        <label>Heure de prise:</label>
+        <input type="text" id="time1" placeholder="HH:mm (ex: 08:30)">
+        
+        <label>Médicament:</label>
+        <input type="text" id="Object1" placeholder="ex: Doliprane">
+
+        <button type="button" onclick="Sendinfo(1)">Enregistrer dans le casier</button>
+    </div>
+    <div class="card">
+        <h3>Tiroir 2</h3>
+        <label>Patient (Username):</label>
+        <input type="text" id="user2" placeholder="ex: jean-dupont">
+        
+        <label>Heure de prise:</label>
+        <input type="text" id="time2" placeholder="HH:mm (ex: 08:30)">
+        
+        <label>Médicament:</label>
+        <input type="text" id="Object2" placeholder="ex: Doliprane">
+
+        <button type="button" onclick="Sendinfo(2)">Enregistrer dans le casier</button>
+
+    </div>
+    <div class="card">
+        <h3>Tiroir 3</h3>
+        <label>Patient (Username):</label>
+        <input type="text" id="user3" placeholder="ex: jean-dupont">
+        
+        <label>Heure de prise:</label>
+        <input type="text" id="time3" placeholder="HH:mm (ex: 08:30)">
+        
+        <label>Médicament:</label>
+        <input type="text" id="Object3" placeholder="ex: Doliprane">
+
+        <button type="button" onclick="Sendinfo(3)">Enregistrer dans le casier</button>
+
+    </div>
+
+    <!-- Un seul script, pas de doublon -->
+    <script src="/static/script.js"></script>
+</body>
+</html>

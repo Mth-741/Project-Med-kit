@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | Med-kit services</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body { display: block; padding: 40px 20px; }
+        .register-container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto;
+            border-top: 5px solid #007bff;
+        }
+        .register-container input { margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="medical-icon">✚</div>
+        <h1>Create Account</h1>
+        <p>Fill in all fields. Scan your RFID card after creation.</p>
+
+        <div class="input-group">
+            <input type="text"     id="nusername" placeholder="Username" required>
+        </div>
+        <div class="input-group">
+            <input type="text"     id="user"      placeholder="Full name (e.g. Jean-Dupont)" required>
+        </div>
+        <div class="input-group">
+            <input type="password" id="npassword" placeholder="Password" required>
+        </div>
+        <div class="input-group">
+            <input type="password" id="admin"     placeholder="Admin code (leave blank if patient)">
+        </div>
+        <div class="input-group">
+            <input type="passkey" id="passk"     placeholder="Set your passkey">
+        </div>
+
+        <button class="btn-primary" onclick="CredentialSave()">Create account</button>
+    </div>
+
+    <!-- defer ensures DOM is ready before script runs -->
+    <script src="/static/script.js" defer></script>
+</body>
+</html>
