@@ -1,9 +1,3 @@
-/* MedKit – frontend JS (optimized + bug-fixed) */
-
-/**
- * Utility: show a non-blocking status message instead of alert().
- * Falls back to alert() if no #status-msg element exists on the page.
- */
 function showMsg(msg, isError = false) {
     const el = document.getElementById("status-msg");
     if (el) {
@@ -15,7 +9,6 @@ function showMsg(msg, isError = false) {
     }
 }
 
-/** Disable/enable a button with loading text while a request is in flight. */
 function setLoading(btn, loading) {
     if (!btn) return;
     btn.disabled = loading;
@@ -23,7 +16,7 @@ function setLoading(btn, loading) {
     btn.textContent = loading ? "Loading…" : btn.dataset.originalText;
 }
 
-// ── Login ─────────────────────────────────────────────────────────────────────
+
 async function CredentialCheck() {
     const user = document.getElementById("username").value.trim();
     const pass = document.getElementById("password").value;
@@ -53,7 +46,6 @@ async function CredentialCheck() {
     }
 }
 
-// ── Register ──────────────────────────────────────────────────────────────────
 async function CredentialSave() {
     const nuser = document.getElementById("nusername").value.trim();
     const user  = document.getElementById("user").value.trim();
@@ -82,9 +74,7 @@ async function CredentialSave() {
             showMsg("Registration error: " + (data.error || data.message || "Unknown error"), true);
             return;
         }
-
-        // 2. Queue RFID assignment BEFORE redirecting
-        // BUG FIX: original redirected first, so RFID was never queued
+        
         try {
             const rfid = await fetch("/pending-rfid", {
                 method:  "POST",
@@ -100,8 +90,7 @@ async function CredentialSave() {
         } catch {
             showMsg("Account created but could not reach RFID service.", true);
         }
-
-        // 3. Redirect only after everything is done
+        
         setTimeout(() => { window.location.href = data.redirect; }, 1500);
 
     } catch (err) {
@@ -112,7 +101,7 @@ async function CredentialSave() {
     }
 }
 
-// ── Drawer / treatment ────────────────────────────────────────────────────────
+
 async function Sendinfo(value) {
     const timeVal = document.getElementById("time"   + value).value.trim();
     const user    = document.getElementById("user"   + value).value.trim();
@@ -146,7 +135,6 @@ async function Sendinfo(value) {
     }
 }
 
-// ── Reset password ────────────────────────────────────────────────────────────
 async function Resetpass() {
     const user    = document.getElementById("username").value.trim();
     const passk   = document.getElementById("passkey").value.trim();
@@ -165,8 +153,7 @@ async function Resetpass() {
             body:    JSON.stringify({ username: user, passk: passk, password: newPass })
         });
         const data = await resp.json();
-
-        // BUG FIX: original had no success/error feedback at all
+        
         if (resp.ok) {
             showMsg("Password updated! Redirecting…");
             setTimeout(() => { window.location.href = "/"; }, 1500);
