@@ -1,15 +1,11 @@
-"""
-MedKit – Flask server  (optimized + bug-fixed)
-"""
 from flask import Flask, jsonify, request, send_file, session, redirect, url_for
 from flask_cors import CORS
 import json, os, socket, threading, time, hashlib, secrets, re
 
-# ── Paths ──────────────────────────────────────────────────────────────────────
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 DB_PATH   = os.path.join(BASE_PATH, "database.json")
 
-# ── App ────────────────────────────────────────────────────────────────────────
+
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.environ.get("FLASK_SECRET", secrets.token_hex(32))
@@ -17,16 +13,13 @@ app.secret_key = os.environ.get("FLASK_SECRET", secrets.token_hex(32))
 hostname = socket.gethostname()
 IPaddr   = socket.gethostbyname(hostname)
 
-# ── Rate-limit / DDoS config ───────────────────────────────────────────────────
 COOLDOWN_THRESHOLD = 3
 COOLDOWN_WINDOW    = 10
 COOLDOWN_SECONDS   = 30
 
-# ── Security ───────────────────────────────────────────────────────────────────
 ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "1234")  # keep as string
 PW_SALT      = os.environ.get("PW_SALT", "medkit-salt")
 
-# ── Shared state ───────────────────────────────────────────────────────────────
 file_lock = threading.Lock()
 db_lock   = threading.Lock()
 
@@ -35,7 +28,6 @@ recent_registrations = []
 on_cooldown          = False
 BANNED_IPS           = set()
 
-# ── Database bootstrap ─────────────────────────────────────────────────────────
 db: dict = {}
 
 def _load_db_from_disk() -> dict:
@@ -56,14 +48,12 @@ with file_lock:
     if not db:
         _write_db_to_disk({})
 
-# ── DB helpers ─────────────────────────────────────────────────────────────────
 def save_db() -> None:
     """Snapshot current db under lock, then write asynchronously."""
     with db_lock:
         snapshot = dict(db)
     threading.Thread(target=_write_db_to_disk, args=(snapshot,), daemon=True).start()
 
-# ── Password helpers ───────────────────────────────────────────────────────────
 def hash_password(password: str) -> str:
     return hashlib.sha256((PW_SALT + password).encode()).hexdigest()
 
@@ -72,20 +62,18 @@ def check_password(stored: str, provided: str) -> bool:
         return secrets.compare_digest(stored, hash_password(provided))
     return secrets.compare_digest(stored, provided)
 
-# ── Input validation ───────────────────────────────────────────────────────────
 _USERNAME_RE = re.compile(r"^[A-Za-z0-9._-]{3,64}$")
 
 def valid_username(u: str) -> bool:
     return bool(u and _USERNAME_RE.match(u))
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+
 def get_client_ip() -> str:
     return request.headers.get("X-Forwarded-For", request.remote_addr)
 
 def _check_admin_secret(data: dict) -> bool:
     return secrets.compare_digest(str(data.get("secret", "")), ADMIN_SECRET)
 
-# ── DDoS loop ──────────────────────────────────────────────────────────────────
 def ddos_loop() -> None:
     global on_cooldown
     while True:
@@ -103,13 +91,11 @@ def ddos_loop() -> None:
             on_cooldown = False
         time.sleep(0.5)
 
-# ── Middleware ─────────────────────────────────────────────────────────────────
 @app.before_request
 def block_banned_ips():
     if get_client_ip() in BANNED_IPS:
         return jsonify({"error": "Your IP is banned"}), 403
 
-# ── Admin: IP management ───────────────────────────────────────────────────────
 @app.route("/ban-ip", methods=["POST"])
 def ban_ip():
     data = request.get_json() or {}
@@ -143,7 +129,7 @@ def list_banned_ips():
         return jsonify({"error": "forbidden"}), 403
     return jsonify({"banned_ips": list(BANNED_IPS)}), 200
 
-# ── RFID pending queue ─────────────────────────────────────────────────────────
+
 @app.route("/pending-rfid", methods=["POST"])
 def pending_rfid():
     data     = request.get_json() or {}
@@ -167,7 +153,7 @@ def remove_pending_rfid():
         pending_rfid_data.remove(username)
     return jsonify({"status": "ok", "pending": list(pending_rfid_data)}), 200
 
-# ── RFID access ────────────────────────────────────────────────────────────────
+
 @app.route("/accespy", methods=["POST"])
 def accespy():
     data = request.get_json() or {}
@@ -188,7 +174,7 @@ def accespy():
     # BUG FIX: was returning 201 (Created) — denials must be 403
     return jsonify({"status": "denied"}), 403
 
-# ── Patient: view own treatment ────────────────────────────────────────────────
+
 @app.route("/my-traitement", methods=["GET"])
 def my_traitement():
     if not session.get("logged_in"):
@@ -200,7 +186,6 @@ def my_traitement():
         traitement = dict(db[username].get("traitement", {}))
     return jsonify({"traitement": traitement}), 200
 
-# ── Pages ──────────────────────────────────────────────────────────────────────
 @app.route("/")
 def home():
     return send_file("index.html")
@@ -230,7 +215,7 @@ def logout():
     session.clear()
     return redirect(url_for("home"))
 
-# ── Auth: login ────────────────────────────────────────────────────────────────
+
 @app.route("/login", methods=["POST"])
 def verification():
     data     = request.get_json() or {}
@@ -252,7 +237,7 @@ def verification():
 
     return _pers_area(username)
 
-# ── Auth: register ─────────────────────────────────────────────────────────────
+
 @app.route("/register", methods=["POST"])
 def create_account():
     if on_cooldown:
@@ -292,16 +277,9 @@ def create_account():
         recent_registrations.append(time.time())
     return jsonify({"status": "account_created", "redirect": redirect_page}), 201
 
-# ── Auth: reset password ───────────────────────────────────────────────────────
+
 @app.route("/reset-password", methods=["POST"])
 def reset_passw():
-    """
-    BUG FIX (critical — 4 bugs in original):
-      1. `passk in db` tested the passk string as a dict key, not the stored value.
-      2. Returned immediately after setting access=True, so password was never changed.
-      3. db[username] was reassigned to {password:…} only, wiping uid/traitement/etc.
-      4. Missing return after save_db() → Flask returned None → HTTP 500.
-    """
     data     = request.get_json() or {}
     username = data.get("username", "").strip()
     passk    = data.get("passk", "").strip()
@@ -364,7 +342,6 @@ def saveinfo():
     return jsonify({"status": "success",
                     "message": "Traitement enregistré pour " + user_val}), 200
 
-# ── Internal helpers ───────────────────────────────────────────────────────────
 def _pers_area(username: str):
     session["logged_in"] = True
     session["username"]  = username
@@ -372,7 +349,6 @@ def _pers_area(username: str):
         redirect_page = db[username]["given_page"]
     return jsonify({"status": "success", "redirect": redirect_page})
 
-# ── Entry point ────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     threading.Thread(target=ddos_loop, daemon=True).start()
     app.run(debug=False, port=50000, host="0.0.0.0")
