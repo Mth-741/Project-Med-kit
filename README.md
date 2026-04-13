@@ -1,17 +1,14 @@
-# Project-Med-kit V1
-A high school project intended  to first place learn about data storing and server/client type communication , an intelligent locker intended to manage medicines from distance providing a personal and specific health care for a group or and individual patient ,the project could reach his potential due to time complication and teammates inefficiency
-
-# What it does
-What the project does concretly ?
-Not that much but it could have a bigger impact in the future , for now it's a python server using Flask library , basically setting up multiple routes (Flask-cors), it's possible to enter multiple web pages stored in the system  choosen (it's primarly used for raspberry but it can  be adapted ) , coded in html/css , with the client functions managed by javascript component , using http protocol , basic stuff.
-There is a login , register , reset password , state (patient) and medic page , state gives the possibility to do absolutely nothing for now , but medic ones permits to save for a registered patient(user) a time for take  and  the name of the medecine.
-The medicines are put manually in the locker , the operator knows ( or will know ) where to put it ,  in wich drawer , everything is stocked in a json constantly modified by the server itself 
-
+# Project-Med-Kit V1
+A high school project primarily intended to explore data storage and server/client communication. The concept: an intelligent locker designed to manage medicines remotely, providing personalized healthcare for a group or individual patient. The project didn't fully reach its potential due to time constraints and team inefficiencies.
+# What It Does
+Concretely? Not that much yet — but it has potential for a bigger impact down the line.
+For now, it's a Python server built with the Flask library and the Flask-CORS extension, exposing multiple routes. Users can navigate several web pages stored on the system — designed primarily for Raspberry Pi but adaptable to other environments. The frontend is written in HTML/CSS, with client-side logic handled by JavaScript, communicating over HTTP using POST requests.
+Features include: login, register, reset password, a patient state page, and a medic page. The state page currently does nothing, but the medic page allows saving a medication name and intake schedule for a registered patient.
+Medicines are placed manually in the locker — the operator knows (or will know) which drawer to use. All data is stored in a JSON file that the server reads and writes continuously.
 # Roles
-Server : routes instructions , gives and receives data from/to the client in js (POST/GIVE methods),  saves up in the json , coordinates other components like rfid manager or temperature fans (soon coming)
-Client : What users sees , web pages html/css , also the script.js that manages the http communication (thanks Fetch utilities)
-Rfid   : Script in python used to read rfid tags and send them to the server during registation  procedures
-Admin Pannel : script in python used to send instructions to ban an ip , the most inefficient and insecure features so far , good luck 
-
+Server — Routes instructions, exchanges data with the JS client via POST requests, updates the JSON file, and coordinates other components like the RFID manager or temperature/fan control (coming soon).
+Client — Everything the user sees: HTML/CSS pages and a script.js file that handles HTTP communication using the Fetch API.
+RFID — A Python script that reads RFID tags and sends them to the server during registration procedures.
+Admin Panel — A Python script for sending instructions such as banning an IP address. Currently the least polished and least secure feature — use at your own risk.
 # About
-I'm a high school student , getting warm up  in software engineering and bunch other stuff , like you noticed neither my english is good but you need to start at some point right ? for the V2 i promise i gonna clean up my repo properly :)
+I'm a high school student getting my footing in software engineering and a bunch of other things. As you might have noticed, my English isn't perfect either — but you have to start somewhere, right? For V2, I promise I'll clean up the repo properly.
