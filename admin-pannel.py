@@ -1,10 +1,3 @@
-"""
-MedKit – Admin IP-ban panel  (optimized + bug-fixed)
-Run on any machine that can reach the Flask server.
-
-BUG FIX: hardcoded password removed; credentials now read from env vars.
-BUG FIX: /banned-ips now requires secret as query param (server-side fix too).
-"""
 import os
 import requests
 import socket
@@ -16,10 +9,8 @@ hostname = socket.gethostname()
 IPaddr   = socket.gethostbyname(hostname)
 BASE_URL = os.environ.get("MEDKIT_SERVER", f"http://{IPaddr}:50000")
 
-# Allowed admin usernames (extend as needed, or move to env)
 ADMIN_USERS = set(os.environ.get("ADMIN_USERS", "Sanziro").split(","))
 
-# BUG FIX: password no longer hardcoded — read from env or prompt securely
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 
 def _prompt_credentials():
