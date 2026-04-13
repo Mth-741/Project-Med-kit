@@ -1,11 +1,3 @@
-"""
-MedKit – RFID reader daemon  (optimized + bug-fixed)
-Raspberry Pi SPI wiring:
-  VCC  → Pin 1  (3.3V)    RST  → Pin 22 (GPIO 25)
-  GND  → Pin 6  (GND)     SDA  → Pin 24 (GPIO 8  / CE0)
-  SCK  → Pin 23 (GPIO 11) MOSI → Pin 19 (GPIO 10)
-  MISO → Pin 21 (GPIO 9)
-"""
 import os
 import time
 import json
@@ -20,14 +12,13 @@ BASE_URL = f"http://{IPaddr}:50000"
 
 DB_PATH  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database.json")
 
-# Set ADMIN_UID in environment after running identify-card.py
+
 ADMIN_UID = os.environ.get("ADMIN_UID", "")
 
-# How long to pause between poll cycles when no card is expected (seconds)
+
 IDLE_POLL_INTERVAL = 0.3
 
 
-# ── DB helpers ────────────────────────────────────────────────────────────────
 def load_db() -> dict:
     if not os.path.exists(DB_PATH) or os.stat(DB_PATH).st_size == 0:
         return {}
@@ -41,7 +32,6 @@ def save_db(db: dict) -> None:
     os.replace(tmp, DB_PATH)   # atomic
 
 
-# ── Server helpers ────────────────────────────────────────────────────────────
 def _post(path: str, payload: dict, timeout: int = 3):
     """POST to the Flask server; returns response or None on error."""
     try:
@@ -69,7 +59,6 @@ def mark_done(username: str) -> None:
     _post("/pending-rfid/done", {"username": username})
 
 
-# ── Card assignment (new patient) ─────────────────────────────────────────────
 def assign_pending(username: str) -> None:
     """Scan a new card and bind its UID to a freshly registered user."""
     print(f"\n[RFID] New patient: {username}")
@@ -98,7 +87,6 @@ def assign_pending(username: str) -> None:
     time.sleep(1)
 
 
-# ── Normal authentication ─────────────────────────────────────────────────────
 def authenticate(uid: str) -> None:
     """
     Send the already-scanned UID to the server for validation.
@@ -118,7 +106,6 @@ def authenticate(uid: str) -> None:
         print(f"[RFID] Unexpected response: {r.status_code}")
 
 
-# ── Main loop ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     print("=" * 42)
     print("  MedKit RFID system ready")
