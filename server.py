@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request, send_file, session, redirect, url_for
 from flask_cors import CORS
-import json, os, socket, threading, time, hashlib, secrets, re
+import json, os, socket, threading, time, hashlib, secrets, re , urllib.request , urllib
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 DB_PATH   = os.path.join(BASE_PATH, "database.json")
@@ -10,25 +10,55 @@ app = Flask(__name__)
 CORS(app)
 app.secret_key = os.environ.get("FLASK_SECRET", secrets.token_hex(32))
 
+DRAWER_CAPACITY = {#drawer size for each in cm^2
+    1: 500,
+    2: 500,
+    3: 500
+}
+
+MED_PATH = os.path.join(BASE_PATH, "medicaments.json")
+try:
+   url = urllib.request.urlopen("https://raw.githubusercontent.com/Sanziro94/Project-Med-kit/main/medicaments.json")
+   Medbase = json.loads(url.read().decode("UTF-8"))
+   with open (MED_PATH, "w") as f:
+       json.dump(Medbase,  f , indent=4)
+   print("Medicaments was update succesfully")
+except Exception as e:
+    print(f"Couldn't update the medicaments database:{e}")
+    if os.path.exists(MED_PATH):
+        with open(MED_PATH, "r") as f:
+            Medbase = json.load(f)
+    else:
+        Medbase = {}
+
+
+
+
 hostname = socket.gethostname()
 IPaddr   = socket.gethostbyname(hostname)
+
 
 COOLDOWN_THRESHOLD = 3
 COOLDOWN_WINDOW    = 10
 COOLDOWN_SECONDS   = 30
 
-ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "1234")  # keep as string
+
+ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "1234")
 PW_SALT      = os.environ.get("PW_SALT", "medkit-salt")
+
 
 file_lock = threading.Lock()
 db_lock   = threading.Lock()
+
 
 pending_rfid_data    = []
 recent_registrations = []
 on_cooldown          = False
 BANNED_IPS           = set()
 
+
 db: dict = {}
+
 
 def _load_db_from_disk() -> dict:
     if not os.path.exists(DB_PATH) or os.stat(DB_PATH).st_size == 0:
@@ -171,7 +201,6 @@ def accespy():
                                 "redirect": info.get("given_page", "/article")}), 200
 
     print(f"[RFID] Access denied uid={uid}")
-    # BUG FIX: was returning 201 (Created) — denials must be 403
     return jsonify({"status": "denied"}), 403
 
 
@@ -183,7 +212,7 @@ def my_traitement():
     with db_lock:
         if not username or username not in db:
             return jsonify({"error": "user not found"}), 404
-        traitement = dict(db[username].get("traitement", {}))
+        traitement = list(db[username].get("traitement", []))
     return jsonify({"traitement": traitement}), 200
 
 @app.route("/")
@@ -269,7 +298,7 @@ def create_account():
             "user":       user,
             "passk":      hash_password(passk),   # BUG FIX: hash passkey at rest
             "given_page": redirect_page,
-            "traitement": {}
+            "traitement": []
         }
 
     save_db()
@@ -305,14 +334,21 @@ def reset_passw():
     save_db()
     return jsonify({"status": "success", "message": "Password updated"}), 200
 
-# ── Manager: save treatment ────────────────────────────────────────────────────
-def _occupancy(tiroirs) -> bool:
+
+def remaining_space(tiroirs) -> int:
+    used = 0
     with db_lock:
         for info in db.values():
-            t = info.get("traitement")
-            if t and t.get("tiroirs") == tiroirs:
-                return True
-    return False
+            for med in info.get("traitement", []):
+                if int(med.get("tiroirs", -1)) == int(tiroirs):
+                    med_name = med.get("object")
+                    used += Medbase.get(med_name, {}).get("size", 0)
+    return DRAWER_CAPACITY.get(tiroirs, 0) - used
+    print(f"[DEBUG] tiroirs={tiroirs} type={type(tiroirs)} used={used} capacity={DRAWER_CAPACITY.get(int(tiroirs), 0)}")
+
+    
+                
+    
 
 @app.route("/Application", methods=["POST"])
 def saveinfo():
@@ -321,26 +357,43 @@ def saveinfo():
     time_val = data.get("time", "").strip()
     med_name = data.get("Object", "").strip()
     tiroirs  = data.get("Tiroirs")
-
+    
+    print(f"[DEBUG] user={user_val} time={time_val} med={med_name} tiroirs={tiroirs}")
     if not user_val or not time_val or not med_name:
         return jsonify({"status": "error", "message": "Champs manquants"}), 400
-    if _occupancy(tiroirs):
-        return jsonify({"status": "error", "message": "Le tiroir est occupé"}), 409
+        
+
+    med_size = Medbase.get(med_name, {}).get("size", 0)
+    space = remaining_space(tiroirs)
+    print(f"[DEBUG] space={space} med_size={med_size}")
+
+
+    if int(space) < int(med_size):
+        return jsonify({"status": "error", "message": "There is no space left"}), 409
+    else:
+        pass
 
     with db_lock:
         target_key = next((k for k, v in db.items() if v.get("user") == user_val), None)
         if target_key is None:
             return jsonify({"status": "error",
                             "message": "Aucun patient trouvé: " + user_val}), 404
-        db[target_key]["traitement"] = {
+        db[target_key]["traitement"].append({
             "time":    time_val,
             "object":  med_name,
             "tiroirs": tiroirs
-        }
+        })
 
     save_db()
     return jsonify({"status": "success",
                     "message": "Traitement enregistré pour " + user_val}), 200
+
+@app.route("/Medication", methods=["GET"])
+def get_med_list():
+ try:
+    return jsonify(Medbase), 200 
+ except Exception as e:
+    return jsonify({"status":"error", "message":"Problem with medbase existance or check parsing"}),404
 
 def _pers_area(username: str):
     session["logged_in"] = True

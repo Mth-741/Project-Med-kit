@@ -79,25 +79,34 @@ async function loadTraitement() {
         const t = data.traitement;
         const el = document.getElementById('traitement-content');
 
-        if (!t || Object.keys(t).length === 0) {
+        console.log(data);
+        console.log(t);
+
+        if (!t || t.length === 0) {
             el.innerHTML = '<div class="alert">Aucun traitement assigné pour le moment.</div>';
             return;
         }
 
-        el.innerHTML = `
-            <div class="info-row">
-                <span class="info-label">Médicament</span>
-                <span class="info-value">${t.object || '—'}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Heure de prise</span>
-                <span class="info-value">${t.time || '—'}</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Tiroir n°</span>
-                <span class="info-value">${t.tiroirs || '—'}</span>
-            </div>
-        `;
+        let html = '';
+        t.forEach(med => {
+            html += `
+                <div class="info-row">
+                    <span class="info-label">Médicament</span>
+                    <span class="info-value">${med.object || '—'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Heure de prise</span>
+                    <span class="info-value">${med.time || '—'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Tiroir n°</span>
+                    <span class="info-value">${med.tiroirs || '—'}</span>
+                </div>
+                <hr>
+            `;
+        });
+        el.innerHTML = html;
+
     } catch (e) {
         document.getElementById('traitement-content').innerHTML =
             '<div class="alert">Impossible de charger le traitement.</div>';
